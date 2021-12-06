@@ -1,14 +1,15 @@
 const std = @import("std");
 const print = std.debug.print;
 
-var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
-const gpa = &gpa_impl.allocator;
-
 const data = @embedFile("../inputs/day03.txt");
 
 const BIT_COUNT = 12;
 
 pub fn main() anyerror!void {
+    var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa_impl.deinit();
+    const gpa = &gpa_impl.allocator;
+
     // Part 1
     var line_count: usize = 0;
     var ones_count: [BIT_COUNT]usize = undefined;

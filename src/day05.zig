@@ -2,12 +2,13 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const print = std.debug.print;
 
-var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
-const gpa = &gpa_impl.allocator;
-
 const data = @embedFile("../inputs/day05.txt");
 
 pub fn main() anyerror!void {
+    var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa_impl.deinit();
+    const gpa = &gpa_impl.allocator;
+
     const lines = try parse(gpa, data[0..]);
     defer lines.deinit();
 

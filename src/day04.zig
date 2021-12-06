@@ -3,12 +3,13 @@ const Allocator = std.mem.Allocator;
 const BitSet = std.bit_set.IntegerBitSet;
 const print = std.debug.print;
 
-var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
-const gpa = &gpa_impl.allocator;
-
 const data = @embedFile("../inputs/day04.txt");
 
 pub fn main() anyerror!void {
+    var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa_impl.deinit();
+    const gpa = &gpa_impl.allocator;
+
     const bingo = try Bingo.parse(gpa, data[0..]);
     defer bingo.deinit();
 
