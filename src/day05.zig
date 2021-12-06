@@ -52,26 +52,28 @@ const Line = struct {
 
     start: Point,
     end: Point,
-    direction: Direction,
 
     fn parse(input: []const u8) !Self {
         var point_str = std.mem.split(input, " -> ");
         const start = try Point.parse(point_str.next().?);
         const end = try Point.parse(point_str.next().?);
-        const direction =
-            if (start.x == end.x) Direction.Vertical else if (start.y == end.y) Direction.Horizontal else Direction.Diagonal;
 
         return Line{
             .start = start,
             .end = end,
-            .direction = direction,
         };
+    }
+
+    fn direction(self: Self) Direction {
+        if (self.start.x == self.end.x) return Direction.Vertical;
+        if (self.start.y == self.end.y) return Direction.Horizontal;
+        return Direction.Diagonal;
     }
 
     fn points(self: *const Self, out: *std.ArrayList(Point)) !void {
         out.clearRetainingCapacity();
 
-        switch (self.direction) {
+        switch (self.direction()) {
             .Horizontal => {
                 const from = std.math.min(self.start.x, self.end.x);
                 const to = std.math.max(self.start.x, self.end.x);
@@ -175,7 +177,7 @@ fn solve(allocator: *Allocator, lines: []const Line) !Result {
                 overlaps_with_diagonal += 1;
             }
 
-            if (line.direction != Direction.Diagonal) {
+            if (line.direction() != Direction.Diagonal) {
                 if (points[y][x].no_diagonal_count < 3) {
                     points[y][x].no_diagonal_count += 1;
                 }
