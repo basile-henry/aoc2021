@@ -1,6 +1,5 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
-const BitSet = std.bit_set.IntegerBitSet;
 const print = std.debug.print;
 
 var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
@@ -12,21 +11,23 @@ pub fn main() anyerror!void {
     const lines = try parse(gpa, data[0..]);
     defer lines.deinit();
 
-    print("Part 1: {d}\n", .{try solve(gpa, false, lines.items)});
-    print("Part 2: {d}\n", .{try solve(gpa, true, lines.items)});
+    const res = try solve(gpa, lines.items);
+
+    print("Part 1: {d}\n", .{res.part1});
+    print("Part 2: {d}\n", .{res.part2});
 }
 
 const Point = struct {
     const Self = @This();
 
-    x: isize,
-    y: isize,
+    x: i16,
+    y: i16,
 
     fn parse(input: []const u8) !Self {
         var pos = std.mem.split(input, ",");
 
-        const x = try std.fmt.parseInt(isize, pos.next().?, 10);
-        const y = try std.fmt.parseInt(isize, pos.next().?, 10);
+        const x = try std.fmt.parseInt(i16, pos.next().?, 10);
+        const y = try std.fmt.parseInt(i16, pos.next().?, 10);
 
         return Point{
             .x = x,
@@ -101,8 +102,8 @@ const Line = struct {
                 std.debug.assert(x_dist == y_dist);
 
                 const assending_x = self.start.x < self.end.x;
-                const delta_x = if (self.start.x < self.end.x) @as(isize, 1) else -1;
-                const delta_y = if (self.start.y < self.end.y) @as(isize, 1) else -1;
+                const delta_x = if (self.start.x < self.end.x) @as(i16, 1) else -1;
+                const delta_y = if (self.start.y < self.end.y) @as(i16, 1) else -1;
 
                 var x = self.start.x;
                 var y = self.start.y;
@@ -134,35 +135,61 @@ fn parse(allocator: *Allocator, input: []const u8) !std.ArrayList(Line) {
     return out;
 }
 
-fn solve(allocator: *Allocator, diagonals: bool, lines: []const Line) !usize {
-    var points = std.AutoHashMap(Point, usize).init(allocator);
-    defer points.deinit();
+const Result = struct {
+    part1: usize,
+    part2: usize,
+};
+
+const Cell = struct {
+    no_diagonal_count: u2,
+    with_diagonal_count: u2,
+};
+
+fn solve(allocator: *Allocator, lines: []const Line) !Result {
+    var points = try allocator.create([1000][1000]Cell);
+    defer allocator.free(points);
+
+    for (points) |*row| {
+        std.mem.set(Cell, row[0..], Cell{ .no_diagonal_count = 0, .with_diagonal_count = 0 });
+    }
 
     var overlaps: usize = 0;
+    var overlaps_with_diagonal: usize = 0;
 
     var line_points = std.ArrayList(Point).init(allocator);
     defer line_points.deinit();
 
     for (lines) |line| {
-        if (!diagonals and line.direction == Direction.Diagonal) {
-            continue;
-        }
-
         try line.points(&line_points);
 
         for (line_points.items) |p| {
-            if (points.getPtr(p)) |x| {
-                if (x.* == 1) {
+            const x = @intCast(usize, p.x);
+            const y = @intCast(usize, p.y);
+
+            if (points[y][x].with_diagonal_count < 3) {
+                points[y][x].with_diagonal_count += 1;
+            }
+
+            if (points[y][x].with_diagonal_count == 2) {
+                overlaps_with_diagonal += 1;
+            }
+
+            if (line.direction != Direction.Diagonal) {
+                if (points[y][x].no_diagonal_count < 3) {
+                    points[y][x].no_diagonal_count += 1;
+                }
+
+                if (points[y][x].no_diagonal_count == 2) {
                     overlaps += 1;
                 }
-                x.* += 1;
-            } else {
-                try points.put(p, 1);
             }
         }
     }
 
-    return overlaps;
+    return Result{
+        .part1 = overlaps,
+        .part2 = overlaps_with_diagonal,
+    };
 }
 
 test "overlap" {
@@ -184,10 +211,8 @@ test "overlap" {
     const lines = try parse(allocator, input[0..]);
     defer lines.deinit();
 
-    const part1 = try solve(allocator, false, lines.items);
+    const res = try solve(allocator, lines.items);
 
-    const part2 = try solve(allocator, true, lines.items);
-
-    try std.testing.expectEqual(@as(usize, 5), part1);
-    try std.testing.expectEqual(@as(usize, 12), part2);
+    try std.testing.expectEqual(@as(usize, 5), res.part1);
+    try std.testing.expectEqual(@as(usize, 12), res.part2);
 }
