@@ -165,24 +165,25 @@ fn solve(allocator: *Allocator, lines: []const Line) !Result {
     for (lines) |line| {
         try line.points(&line_points);
 
-        for (line_points.items) |p| {
-            const x = @intCast(usize, p.x);
-            const y = @intCast(usize, p.y);
+        for (line_points.items) |lp| {
+            const x = @intCast(usize, lp.x);
+            const y = @intCast(usize, lp.y);
+            const p = &points[y][x];
 
-            if (points[y][x].with_diagonal_count < 3) {
-                points[y][x].with_diagonal_count += 1;
+            if (p.with_diagonal_count < 3) {
+                p.with_diagonal_count += 1;
             }
 
-            if (points[y][x].with_diagonal_count == 2) {
+            if (p.with_diagonal_count == 2) {
                 overlaps_with_diagonal += 1;
             }
 
             if (line.direction() != Direction.Diagonal) {
-                if (points[y][x].no_diagonal_count < 3) {
-                    points[y][x].no_diagonal_count += 1;
+                if (p.no_diagonal_count < 3) {
+                    p.no_diagonal_count += 1;
                 }
 
-                if (points[y][x].no_diagonal_count == 2) {
+                if (p.no_diagonal_count == 2) {
                     overlaps += 1;
                 }
             }
