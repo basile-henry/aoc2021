@@ -45,16 +45,24 @@ fn solve(allocator: *Allocator, positions: []const isize, cost: fn ([]const isiz
         best_cost = cur_cost;
     }
 
-    offset += dir;
-    while (true) : (offset += dir) {
-        const new_cost = try cost(positions, offset);
+    var step_size: isize = 32;
+    while (step_size > 1) {
+        while (true) {
+            const off = offset + step_size * dir;
+            const new_cost = try cost(positions, off);
 
-        if (new_cost >= best_cost) {
-            return best_cost;
+            if (new_cost >= best_cost) {
+                break;
+            }
+
+            best_cost = new_cost;
+            offset = off;
         }
 
-        best_cost = new_cost;
+        step_size >>= 1;
     }
+
+    return best_cost;
 }
 
 fn cost1(positions: []const isize, offset: isize) anyerror!isize {
