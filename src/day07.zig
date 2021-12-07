@@ -9,7 +9,11 @@ pub fn main() anyerror!void {
     defer _ = gpa_impl.deinit();
     const gpa = &gpa_impl.allocator;
 
-    var positions = std.ArrayList(isize).init(gpa);
+    return main_with_allocator(gpa);
+}
+
+pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+    var positions = std.ArrayList(isize).init(allocator);
     defer positions.deinit();
 
     {
@@ -20,8 +24,8 @@ pub fn main() anyerror!void {
         }
     }
 
-    print("Part 1: {d}\n", .{try solve(gpa, positions.items, cost1)});
-    print("Part 2: {d}\n", .{try solve(gpa, positions.items, cost2)});
+    print("Part 1: {d}\n", .{try solve(allocator, positions.items, cost1)});
+    print("Part 2: {d}\n", .{try solve(allocator, positions.items, cost2)});
 }
 
 fn solve(allocator: *Allocator, positions: []const isize, cost: fn ([]const isize, isize) anyerror!isize) anyerror!isize {

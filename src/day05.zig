@@ -9,10 +9,14 @@ pub fn main() anyerror!void {
     defer _ = gpa_impl.deinit();
     const gpa = &gpa_impl.allocator;
 
-    const lines = try parse(gpa, data[0..]);
+    return main_with_allocator(gpa);
+}
+
+pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+    const lines = try parse(allocator, data[0..]);
     defer lines.deinit();
 
-    const res = try solve(gpa, lines.items);
+    const res = try solve(allocator, lines.items);
 
     print("Part 1: {d}\n", .{res.part1});
     print("Part 2: {d}\n", .{res.part2});

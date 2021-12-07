@@ -10,10 +10,14 @@ pub fn main() anyerror!void {
     defer _ = gpa_impl.deinit();
     const gpa = &gpa_impl.allocator;
 
-    const bingo = try Bingo.parse(gpa, data[0..]);
+    return main_with_allocator(gpa);
+}
+
+pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+    const bingo = try Bingo.parse(allocator, data[0..]);
     defer bingo.deinit();
 
-    const res = try solve(gpa, bingo);
+    const res = try solve(allocator, bingo);
 
     print("Part 1: {d}\n", .{res.part1});
     print("Part 2: {d}\n", .{res.part2});

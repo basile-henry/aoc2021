@@ -1,4 +1,5 @@
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 const print = std.debug.print;
 
 const data = @embedFile("../inputs/day03.txt");
@@ -10,13 +11,17 @@ pub fn main() anyerror!void {
     defer _ = gpa_impl.deinit();
     const gpa = &gpa_impl.allocator;
 
+    return main_with_allocator(gpa);
+}
+
+pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
     // Part 1
     var line_count: usize = 0;
     var ones_count: [BIT_COUNT]usize = undefined;
 
     std.mem.set(usize, ones_count[0..], 0);
 
-    var inputs = std.ArrayList(usize).init(gpa);
+    var inputs = std.ArrayList(usize).init(allocator);
     defer inputs.deinit();
 
     {
@@ -53,17 +58,17 @@ pub fn main() anyerror!void {
     print("Part 1: {}\n", .{gamma * epsilon});
 
     // Part 2
-    var oxy_candidates = std.ArrayList(usize).init(gpa);
+    var oxy_candidates = std.ArrayList(usize).init(allocator);
     defer oxy_candidates.deinit();
 
     try oxy_candidates.insertSlice(0, inputs.items);
 
-    var co2_candidates = std.ArrayList(usize).init(gpa);
+    var co2_candidates = std.ArrayList(usize).init(allocator);
     defer co2_candidates.deinit();
 
     try co2_candidates.insertSlice(0, inputs.items);
 
-    var buffer = std.ArrayList(usize).init(gpa);
+    var buffer = std.ArrayList(usize).init(allocator);
     defer buffer.deinit();
 
     var bit: usize = 0;
