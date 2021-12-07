@@ -19,4 +19,7 @@ pub fn main() anyerror!void {
 
     print("\nDay 06:\n", .{});
     try @import("./day06.zig").main();
+
+    print("\nDay 07:\n", .{});
+    try @import("./day07.zig").main();
 }
