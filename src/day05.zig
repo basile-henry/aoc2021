@@ -51,6 +51,62 @@ const Direction = enum {
     Diagonal,
 };
 
+const PointIterator = struct {
+    const Self = @This();
+
+    line: Line,
+    idx: i16,
+
+    fn next(self: *Self) ?Point {
+        switch (self.line.direction()) {
+            .Horizontal => {
+                const from = std.math.min(self.line.start.x, self.line.end.x);
+                const to = std.math.max(self.line.start.x, self.line.end.x);
+
+                const x = from + self.idx;
+                if (x <= to) {
+                    self.idx += 1;
+                    return Point{
+                        .x = x,
+                        .y = self.line.start.y,
+                    };
+                }
+            },
+            .Vertical => {
+                const from = std.math.min(self.line.start.y, self.line.end.y);
+                const to = std.math.max(self.line.start.y, self.line.end.y);
+
+                const y = from + self.idx;
+                if (y <= to) {
+                    self.idx += 1;
+                    return Point{
+                        .x = self.line.start.x,
+                        .y = y,
+                    };
+                }
+            },
+            .Diagonal => {
+                const assending_x = self.line.start.x < self.line.end.x;
+                const delta_x = if (self.line.start.x < self.line.end.x) @as(i16, 1) else -1;
+                const delta_y = if (self.line.start.y < self.line.end.y) @as(i16, 1) else -1;
+
+                var x = self.line.start.x + self.idx * delta_x;
+                var y = self.line.start.y + self.idx * delta_y;
+
+                if ((assending_x and x <= self.line.end.x) or (!assending_x and x >= self.line.end.x)) {
+                    self.idx += 1;
+                    return Point{
+                        .x = x,
+                        .y = y,
+                    };
+                }
+            },
+        }
+
+        return null;
+    }
+};
+
 const Line = struct {
     const Self = @This();
 
@@ -74,58 +130,11 @@ const Line = struct {
         return Direction.Diagonal;
     }
 
-    fn points(self: *const Self, out: *std.ArrayList(Point)) !void {
-        out.clearRetainingCapacity();
-
-        switch (self.direction()) {
-            .Horizontal => {
-                const from = std.math.min(self.start.x, self.end.x);
-                const to = std.math.max(self.start.x, self.end.x);
-
-                var i = from;
-                while (i <= to) : (i += 1) {
-                    try out.append(Point{
-                        .x = i,
-                        .y = self.start.y,
-                    });
-                }
-            },
-            .Vertical => {
-                const from = std.math.min(self.start.y, self.end.y);
-                const to = std.math.max(self.start.y, self.end.y);
-
-                var i = from;
-                while (i <= to) : (i += 1) {
-                    try out.append(Point{
-                        .x = self.start.x,
-                        .y = i,
-                    });
-                }
-            },
-            .Diagonal => {
-                // Check diagonal is 45 degree
-                const x_dist = try std.math.absInt(self.start.x - self.start.y);
-                const y_dist = try std.math.absInt(self.start.x - self.start.y);
-                std.debug.assert(x_dist == y_dist);
-
-                const assending_x = self.start.x < self.end.x;
-                const delta_x = if (self.start.x < self.end.x) @as(i16, 1) else -1;
-                const delta_y = if (self.start.y < self.end.y) @as(i16, 1) else -1;
-
-                var x = self.start.x;
-                var y = self.start.y;
-
-                while ((assending_x and x <= self.end.x) or (!assending_x and x >= self.end.x)) : ({
-                    x += delta_x;
-                    y += delta_y;
-                }) {
-                    try out.append(Point{
-                        .x = x,
-                        .y = y,
-                    });
-                }
-            },
-        }
+    fn points_iterator(self: Self) PointIterator {
+        return PointIterator{
+            .line = self,
+            .idx = 0,
+        };
     }
 };
 
@@ -152,24 +161,16 @@ const Cell = struct {
     with_diagonal_count: u2,
 };
 
+var points: [1000][1000]Cell = undefined; // zero initialisation
+
 fn solve(allocator: *Allocator, lines: []const Line) !Result {
-    var points = try allocator.create([1000][1000]Cell);
-    defer allocator.free(points);
-
-    for (points) |*row| {
-        std.mem.set(Cell, row[0..], Cell{ .no_diagonal_count = 0, .with_diagonal_count = 0 });
-    }
-
     var overlaps: usize = 0;
     var overlaps_with_diagonal: usize = 0;
 
-    var line_points = std.ArrayList(Point).init(allocator);
-    defer line_points.deinit();
-
     for (lines) |line| {
-        try line.points(&line_points);
+        var it = line.points_iterator();
 
-        for (line_points.items) |lp| {
+        while (it.next()) |lp| {
             const x = @intCast(usize, lp.x);
             const y = @intCast(usize, lp.y);
             const p = &points[y][x];
