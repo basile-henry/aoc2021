@@ -86,115 +86,123 @@ fn idx(c: u8) usize {
     return @as(usize, c - 'a');
 }
 
-fn digit(n: usize) BitSet {
-    var out = BitSet.initEmpty();
+fn digit(comptime n: usize) comptime BitSet {
+    comptime var out = BitSet.initEmpty();
 
-    switch (n) {
-        0 => {
-            out.set(idx('a'));
-            out.set(idx('b'));
-            out.set(idx('c'));
-            out.set(idx('e'));
-            out.set(idx('f'));
-            out.set(idx('g'));
-        },
-        1 => {
-            out.set(idx('c'));
-            out.set(idx('f'));
-        },
-        2 => {
-            out.set(idx('a'));
-            out.set(idx('c'));
-            out.set(idx('d'));
-            out.set(idx('e'));
-            out.set(idx('g'));
-        },
-        3 => {
-            out.set(idx('a'));
-            out.set(idx('c'));
-            out.set(idx('d'));
-            out.set(idx('f'));
-            out.set(idx('g'));
-        },
-        4 => {
-            out.set(idx('b'));
-            out.set(idx('c'));
-            out.set(idx('d'));
-            out.set(idx('f'));
-        },
-        5 => {
-            out.set(idx('a'));
-            out.set(idx('b'));
-            out.set(idx('d'));
-            out.set(idx('f'));
-            out.set(idx('g'));
-        },
-        6 => {
-            out.set(idx('a'));
-            out.set(idx('b'));
-            out.set(idx('d'));
-            out.set(idx('e'));
-            out.set(idx('f'));
-            out.set(idx('g'));
-        },
-        7 => {
-            out.set(idx('a'));
-            out.set(idx('c'));
-            out.set(idx('f'));
-        },
-        8 => {
-            out.set(idx('a'));
-            out.set(idx('b'));
-            out.set(idx('c'));
-            out.set(idx('d'));
-            out.set(idx('e'));
-            out.set(idx('f'));
-            out.set(idx('g'));
-        },
-        9 => {
-            out.set(idx('a'));
-            out.set(idx('b'));
-            out.set(idx('c'));
-            out.set(idx('d'));
-            out.set(idx('f'));
-            out.set(idx('g'));
-        },
-        else => @panic("unreachable"),
+    comptime {
+        switch (n) {
+            0 => {
+                out.set(idx('a'));
+                out.set(idx('b'));
+                out.set(idx('c'));
+                out.set(idx('e'));
+                out.set(idx('f'));
+                out.set(idx('g'));
+            },
+            1 => {
+                out.set(idx('c'));
+                out.set(idx('f'));
+            },
+            2 => {
+                out.set(idx('a'));
+                out.set(idx('c'));
+                out.set(idx('d'));
+                out.set(idx('e'));
+                out.set(idx('g'));
+            },
+            3 => {
+                out.set(idx('a'));
+                out.set(idx('c'));
+                out.set(idx('d'));
+                out.set(idx('f'));
+                out.set(idx('g'));
+            },
+            4 => {
+                out.set(idx('b'));
+                out.set(idx('c'));
+                out.set(idx('d'));
+                out.set(idx('f'));
+            },
+            5 => {
+                out.set(idx('a'));
+                out.set(idx('b'));
+                out.set(idx('d'));
+                out.set(idx('f'));
+                out.set(idx('g'));
+            },
+            6 => {
+                out.set(idx('a'));
+                out.set(idx('b'));
+                out.set(idx('d'));
+                out.set(idx('e'));
+                out.set(idx('f'));
+                out.set(idx('g'));
+            },
+            7 => {
+                out.set(idx('a'));
+                out.set(idx('c'));
+                out.set(idx('f'));
+            },
+            8 => {
+                out.set(idx('a'));
+                out.set(idx('b'));
+                out.set(idx('c'));
+                out.set(idx('d'));
+                out.set(idx('e'));
+                out.set(idx('f'));
+                out.set(idx('g'));
+            },
+            9 => {
+                out.set(idx('a'));
+                out.set(idx('b'));
+                out.set(idx('c'));
+                out.set(idx('d'));
+                out.set(idx('f'));
+                out.set(idx('g'));
+            },
+            else => @panic("Only digits 0..9 supported"),
+        }
     }
 
     return out;
 }
 
 fn get_possibilities(signal: []const u8) BitSet {
-    var possibilities = BitSet.initEmpty();
-
     switch (signal.len) {
         2 => {
-            possibilities.setUnion(digit(1));
+            return digit(1);
         },
         3 => {
-            possibilities.setUnion(digit(7));
+            return digit(7);
         },
         4 => {
-            possibilities.setUnion(digit(4));
+            return digit(4);
         },
         5 => {
-            possibilities.setUnion(digit(2));
-            possibilities.setUnion(digit(3));
-            possibilities.setUnion(digit(5));
+            comptime var possibilities = BitSet.initEmpty();
+            comptime {
+                possibilities.setUnion(digit(2));
+                possibilities.setUnion(digit(3));
+                possibilities.setUnion(digit(5));
+            }
+
+            return possibilities;
         },
         6 => {
-            possibilities.setUnion(digit(0));
-            possibilities.setUnion(digit(6));
-            possibilities.setUnion(digit(9));
+            comptime var possibilities = BitSet.initEmpty();
+            comptime {
+                possibilities.setUnion(digit(0));
+                possibilities.setUnion(digit(6));
+                possibilities.setUnion(digit(9));
+            }
+
+            return possibilities;
         },
         7 => {
-            possibilities.setUnion(digit(8));
+            return digit(8);
         },
         else => @panic("Invalid input"),
     }
-
-    return possibilities;
 }
 
 fn decode(input: []const u8, mapping: [7]usize) ?usize {
@@ -204,8 +212,8 @@ fn decode(input: []const u8, mapping: [7]usize) ?usize {
         bit_set.set(mapping[idx(c)]);
     }
 
-    var d: usize = 0;
-    while (d < 10) : (d += 1) {
+    comptime var d: usize = 0;
+    inline while (d < 10) : (d += 1) {
         if (bit_set.mask == digit(d).mask) return d;
     }
 
