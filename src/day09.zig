@@ -6,7 +6,7 @@ const data = @embedFile("../inputs/day09.txt");
 
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
-    // defer _ = gpa_impl.deinit();
+    defer _ = gpa_impl.deinit();
     const gpa = &gpa_impl.allocator;
 
     return main_with_allocator(gpa);
