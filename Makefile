@@ -3,6 +3,9 @@
 watch:
 	watchexec -c -w "src" "zig run src/day$(day).zig"
 
+watch-test:
+	watchexec -c -w "src" "zig test src/day$(day).zig"
+
 run:
 	zig run -O ReleaseSafe src/day$(day).zig
 
