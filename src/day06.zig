@@ -40,6 +40,12 @@ pub fn main() anyerror!void {
     print("Part 2: {d}\n", .{sum(u64, lanternfish)});
 }
 
+pub fn main_with_allocator(allocator: *std.mem.Allocator) anyerror!void {
+    _ = allocator;
+
+    return main();
+}
+
 fn sum(comptime T: type, a: anytype) T {
     var out: T = 0;
 

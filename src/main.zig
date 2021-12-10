@@ -20,7 +20,7 @@ pub fn main() anyerror!void {
         };
 
         print("\nDay " ++ day_str ++ "\n", .{});
-        try @import("./day" ++ day_str ++ ".zig").main();
+        try @import("./day" ++ day_str ++ ".zig").main_with_allocator(allocator);
 
         try times.append(timer.lap());
     }

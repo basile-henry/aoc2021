@@ -46,6 +46,12 @@ pub fn main() anyerror!void {
     print("Part 2: {}\n", .{increased_window});
 }
 
+pub fn main_with_allocator(allocator: *std.mem.Allocator) anyerror!void {
+    _ = allocator;
+
+    return main();
+}
+
 fn sum(xs: []usize) usize {
     var out: usize = 0;
 
