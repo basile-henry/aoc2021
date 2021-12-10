@@ -7,33 +7,16 @@ pub fn main() anyerror!void {
     var fixed_alloc = std.heap.FixedBufferAllocator.init(alloc_buffer[0..]);
     const allocator = &fixed_alloc.allocator;
 
-    print("Day 01:\n", .{});
-    try @import("./day01.zig").main();
+    const last_day = 10;
 
-    print("\nDay 02:\n", .{});
-    try @import("./day02.zig").main();
+    comptime var day: u8 = 1;
+    inline while (day <= last_day) : (day += 1) {
+        comptime const day_str = [2]u8{
+            (day / 10) + '0',
+            (day % 10) + '0',
+        };
 
-    print("\nDay 03:\n", .{});
-    try @import("./day03.zig").main_with_allocator(allocator);
-
-    print("\nDay 04:\n", .{});
-    try @import("./day04.zig").main_with_allocator(allocator);
-
-    print("\nDay 05:\n", .{});
-    try @import("./day05.zig").main_with_allocator(allocator);
-
-    print("\nDay 06:\n", .{});
-    try @import("./day06.zig").main();
-
-    print("\nDay 07:\n", .{});
-    try @import("./day07.zig").main_with_allocator(allocator);
-
-    print("\nDay 08:\n", .{});
-    try @import("./day08.zig").main_with_allocator(allocator);
-
-    print("\nDay 09:\n", .{});
-    try @import("./day09.zig").main_with_allocator(allocator);
-
-    print("\nDay 10:\n", .{});
-    try @import("./day10.zig").main_with_allocator(allocator);
+        print("\nDay " ++ day_str ++ "\n", .{});
+        try @import("./day" ++ day_str ++ ".zig").main();
+    }
 }
