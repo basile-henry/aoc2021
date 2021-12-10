@@ -33,4 +33,7 @@ pub fn main() anyerror!void {
 
     print("\nDay 09:\n", .{});
     try @import("./day09.zig").main_with_allocator(allocator);
+
+    print("\nDay 10:\n", .{});
+    try @import("./day10.zig").main_with_allocator(allocator);
 }
