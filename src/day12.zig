@@ -20,7 +20,7 @@ pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
     print("Part 2: {d}\n", .{try part2(allocator, map)});
 }
 
-const Map = std.StringHashMap(std.StringHashMap(void));
+const Map = std.StringHashMap(std.ArrayList([]const u8));
 
 fn deinit_map(map: *Map) void {
     var it = map.valueIterator();
@@ -49,43 +49,68 @@ fn parse(allocator: *Allocator, input: []const u8) !Map {
 
 fn put_append(map: *Map, key: []const u8, val: []const u8) !void {
     if (map.getPtr(key)) |ptr| {
-        try ptr.put(val, .{});
+        try ptr.append(val);
     } else {
-        var entries = std.StringHashMap(void).init(map.allocator);
-        try entries.put(val, .{});
+        var entries = std.ArrayList([]const u8).init(map.allocator);
+        try entries.append(val);
         try map.put(key, entries);
     }
 }
 
-fn count_paths(so_far: *std.ArrayList([]const u8), map: Map, max_small_cave: usize) anyerror!usize {
-    if (so_far.items.len == 0) try so_far.append("start");
+const Frame = struct {
+    current: []const u8,
+    next_idx: usize,
+    max_small_cave: usize,
+};
 
-    const current = so_far.items[so_far.items.len - 1];
+fn count_paths(allocator: *Allocator, map: Map, max_small_cave: usize) !usize {
+    var frames = std.ArrayList(Frame).init(allocator);
+    defer frames.deinit();
 
-    var nexts = map.get(current).?.keyIterator();
+    try frames.append(Frame{
+        .current = "end",
+        .next_idx = 0,
+        .max_small_cave = max_small_cave,
+    });
 
     var paths: usize = 0;
 
-    while (nexts.next()) |next| {
-        if (std.mem.eql(u8, next.*, "start")) {
-            // no way there
-        } else if (std.mem.eql(u8, next.*, "end")) {
-            // end
+    while (frames.items.len > 0) {
+        var frame = &frames.items[frames.items.len - 1];
+
+        const current = frame.current;
+        const nexts = map.get(current).?;
+
+        // Check if we done visiting the current frame
+        if (frame.next_idx == nexts.items.len) {
+            _ = frames.pop();
+            continue;
+        }
+
+        const next = nexts.items[frame.next_idx];
+        frame.next_idx += 1;
+
+        if (std.mem.eql(u8, next, "start")) {
+            // no way forward
             paths += 1;
-        } else if (std.ascii.isUpper(next.*[0])) {
+        } else if (std.mem.eql(u8, next, "end")) {
+            // Reaching the end
+        } else if (std.ascii.isUpper(next[0])) {
             // Big cave
-            try so_far.append(next.*);
-            defer _ = so_far.pop();
-            paths += try count_paths(so_far, map, max_small_cave);
+            try frames.append(Frame{
+                .current = next,
+                .next_idx = 0,
+                .max_small_cave = frame.max_small_cave,
+            });
         } else {
             // Small cave
-            const visited_count = count(next.*, so_far.items);
-            if (visited_count < max_small_cave) {
-                try so_far.append(next.*);
-                defer _ = so_far.pop();
-
-                const next_max_small_cave = if (visited_count > 0) 1 else max_small_cave;
-                paths += try count_paths(so_far, map, next_max_small_cave);
+            const visited_count = count(next, frames.items);
+            if (visited_count < frame.max_small_cave) {
+                try frames.append(Frame{
+                    .current = next,
+                    .next_idx = 0,
+                    .max_small_cave = if (visited_count > 0) 1 else frame.max_small_cave,
+                });
             }
         }
     }
@@ -93,28 +118,22 @@ fn count_paths(so_far: *std.ArrayList([]const u8), map: Map, max_small_cave: usi
     return paths;
 }
 
-fn count(item: []const u8, elems: [][]const u8) usize {
+fn count(item: []const u8, frames: []Frame) usize {
     var out: usize = 0;
 
-    for (elems) |elem| {
-        if (std.mem.eql(u8, item, elem)) out += 1;
+    for (frames) |frame| {
+        if (std.mem.eql(u8, item, frame.current)) out += 1;
     }
 
     return out;
 }
 
 fn part1(allocator: *Allocator, map: Map) !usize {
-    var so_far = std.ArrayList([]const u8).init(allocator);
-    defer so_far.deinit();
-
-    return count_paths(&so_far, map, 1);
+    return count_paths(allocator, map, 1);
 }
 
 fn part2(allocator: *Allocator, map: Map) !usize {
-    var so_far = std.ArrayList([]const u8).init(allocator);
-    defer so_far.deinit();
-
-    return count_paths(&so_far, map, 2);
+    return count_paths(allocator, map, 2);
 }
 
 test "paths small" {
