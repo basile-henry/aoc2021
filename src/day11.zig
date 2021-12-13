@@ -57,12 +57,12 @@ fn propagate(x: usize, y: usize, grid: *Grid) void {
         var j = from_x;
         while (j <= to_x) : (j += 1) {
             if (grid[i][j].energy <= 9) {
-               grid[i][j].energy += 1;
+                grid[i][j].energy += 1;
 
-               if (grid[i][j].energy > 9) {
-                   grid[i][j].flash = true;
-                   propagate(j, i, grid);
-               }
+                if (grid[i][j].energy > 9) {
+                    grid[i][j].flash = true;
+                    propagate(j, i, grid);
+                }
             }
         }
     }
@@ -160,5 +160,5 @@ test "dumbo octopuses" {
     const grid = parse(input[0..]).?;
 
     try std.testing.expectEqual(@as(usize, 1656), part1(grid));
-    // try std.testing.expectEqual(@as(usize, 288957), try part2(allocator, input[0..]));
+    try std.testing.expectEqual(@as(usize, 195), part2(grid));
 }
