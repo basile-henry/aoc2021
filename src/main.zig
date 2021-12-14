@@ -10,7 +10,7 @@ pub fn main() anyerror!void {
     var timer = try std.time.Timer.start();
     var times = std.ArrayList(u64).init(allocator);
 
-    const last_day = 13;
+    const last_day = 14;
 
     comptime var day: u8 = 1;
     inline while (day <= last_day) : (day += 1) {
