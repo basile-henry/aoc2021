@@ -1,14 +1,7 @@
 const std = @import("std");
-const Allocator = std.mem.Allocator;
 const print = std.debug.print;
 
 const data = @embedFile("../inputs/day11.txt");
-
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
-    _ = allocator;
-
-    return main();
-}
 
 pub fn main() anyerror!void {
     const grid = parse(data[0..]).?;
@@ -25,7 +18,7 @@ const Octopus = struct {
 const Grid = [Size][Size]Octopus;
 
 fn parse(input: []const u8) ?Grid {
-    var lines = std.mem.tokenize(input, "\n");
+    var lines = std.mem.tokenize(u8, input, "\n");
     var out: Grid = undefined;
 
     var row: usize = 0;
@@ -154,8 +147,6 @@ test "dumbo octopuses" {
         \\4846848554
         \\5283751526
     ;
-
-    const allocator = std.testing.allocator;
 
     const grid = parse(input[0..]).?;
 

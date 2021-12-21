@@ -7,12 +7,12 @@ const data = @embedFile("../inputs/day20.txt");
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa_impl.deinit();
-    const gpa = &gpa_impl.allocator;
+    const gpa = gpa_impl.allocator();
 
     return main_with_allocator(gpa);
 }
 
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+pub fn main_with_allocator(allocator: Allocator) anyerror!void {
     var prob = try parse(allocator, data);
     defer prob.img.deinit();
 
@@ -64,7 +64,7 @@ const Img = struct {
         return out;
     }
 
-    fn enhance(self: *Self, allocator: *Allocator, algo: ImgEnhanceAlgo) !void {
+    fn enhance(self: *Self, allocator: Allocator, algo: ImgEnhanceAlgo) !void {
         const row_size = self.inside.items[0].items.len + 2;
         const num_rows = self.inside.items.len + 2;
 
@@ -147,8 +147,8 @@ fn char_to_pixel(c: u8) !u1 {
     };
 }
 
-fn parse(allocator: *Allocator, input: []const u8) !ParseResult {
-    var it = std.mem.split(input, "\n\n");
+fn parse(allocator: Allocator, input: []const u8) !ParseResult {
+    var it = std.mem.split(u8, input, "\n\n");
 
     const raw_enhance = it.next().?;
     var algo: ImgEnhanceAlgo = undefined;
@@ -160,7 +160,7 @@ fn parse(allocator: *Allocator, input: []const u8) !ParseResult {
 
     var img = std.ArrayList(std.ArrayList(u1)).init(allocator);
 
-    var lines = std.mem.tokenize(it.next().?, "\n");
+    var lines = std.mem.tokenize(u8, it.next().?, "\n");
     while (lines.next()) |line| {
         var row = try std.ArrayList(u1).initCapacity(allocator, line.len);
         for (line) |c| {

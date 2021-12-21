@@ -1,9 +1,13 @@
-let nixpkgs = import
-  (builtins.fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/dad4fddd52923d90c5ad981d5e29963e829de3c1.tar.gz";
-    sha256 = "03x4vz9fywk9bs59iszm6z8fqy6wb99ik365rsxdvvybhls5kbny";
-  })
-  { };
+let zig-overlay = self: super: {
+      zig = super.callPackage ./zig.nix { llvmPackages = super.llvmPackages_13; };
+    };
+
+    nixpkgs = import
+      (builtins.fetchTarball {
+        url = "https://github.com/NixOS/nixpkgs/archive/1bd4bbd49bef217a3d1adea43498270d6e779d65.tar.gz";
+        sha256 = "1fx6nqz8x9biwlwsnh67z5qz0fmrdgr01yvmdw2cw9xjx8hyss3s";
+      })
+      { overlays = [ zig-overlay ]; };
 
 in
 nixpkgs.mkShell {

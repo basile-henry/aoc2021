@@ -7,12 +7,12 @@ const data = @embedFile("../inputs/day14.txt");
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa_impl.deinit();
-    const gpa = &gpa_impl.allocator;
+    const gpa = gpa_impl.allocator();
 
     return main_with_allocator(gpa);
 }
 
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+pub fn main_with_allocator(allocator: Allocator) anyerror!void {
     var polymer = try Polymer.parse(allocator, data[0..]);
     defer polymer.deinit();
 
@@ -30,15 +30,15 @@ const Polymer = struct {
         self.insertion_rules.deinit();
     }
 
-    fn parse(allocator: *Allocator, input: []const u8) !Self {
-        var it = std.mem.split(input, "\n\n");
+    fn parse(allocator: Allocator, input: []const u8) !Self {
+        var it = std.mem.split(u8, input, "\n\n");
 
         const template = it.next().?;
         var insertion_rules = std.AutoHashMap([2]u8, u8).init(allocator);
 
-        var lines = std.mem.tokenize(it.next().?, "\n");
+        var lines = std.mem.tokenize(u8, it.next().?, "\n");
         while (lines.next()) |line| {
-            var rule = std.mem.split(line, " -> ");
+            var rule = std.mem.split(u8, line, " -> ");
             const pair_str = rule.next().?;
             const insert_str = rule.next().?;
 
@@ -63,7 +63,7 @@ fn put_or_add(comptime K: type, comptime V: type, hm: *std.AutoHashMap(K, V), ke
     }
 }
 
-fn count_min_max(allocator: *Allocator, polymer: Polymer, max_step: usize) !usize {
+fn count_min_max(allocator: Allocator, polymer: Polymer, max_step: usize) !usize {
     var pair_map = std.AutoHashMap([2]u8, usize).init(allocator);
     defer pair_map.deinit();
     var next_pair_map = std.AutoHashMap([2]u8, usize).init(allocator);
@@ -122,11 +122,11 @@ fn count_min_max(allocator: *Allocator, polymer: Polymer, max_step: usize) !usiz
     return max_count - min_count;
 }
 
-fn part1(allocator: *Allocator, polymer: Polymer) !usize {
+fn part1(allocator: Allocator, polymer: Polymer) !usize {
     return count_min_max(allocator, polymer, 10);
 }
 
-fn part2(allocator: *Allocator, polymer: Polymer) !usize {
+fn part2(allocator: Allocator, polymer: Polymer) !usize {
     return count_min_max(allocator, polymer, 40);
 }
 

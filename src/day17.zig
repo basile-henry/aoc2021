@@ -1,5 +1,4 @@
 const std = @import("std");
-const Allocator = std.mem.Allocator;
 const print = std.debug.print;
 
 const data = @embedFile("../inputs/day17.txt");
@@ -9,11 +8,6 @@ pub fn main() anyerror!void {
 
     print("Part 1: {d}\n", .{part1(target_area)});
     print("Part 2: {d}\n", .{part2(target_area)});
-}
-
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
-    _ = allocator;
-    return main();
 }
 
 const V = struct {
@@ -31,13 +25,13 @@ const Area = struct {
 fn parse(input: []const u8) !Area {
     var str = std.mem.trimLeft(u8, input, "target area: x=");
     str = std.mem.trimRight(u8, str, "\n");
-    var it = std.mem.split(str, ", y=");
+    var it = std.mem.split(u8, str, ", y=");
 
-    var it_x = std.mem.split(it.next().?, "..");
+    var it_x = std.mem.split(u8, it.next().?, "..");
     const start_x = try std.fmt.parseInt(isize, it_x.next().?, 10);
     const end_x = try std.fmt.parseInt(isize, it_x.next().?, 10);
 
-    var it_y = std.mem.split(it.next().?, "..");
+    var it_y = std.mem.split(u8, it.next().?, "..");
     const start_y = try std.fmt.parseInt(isize, it_y.next().?, 10);
     const end_y = try std.fmt.parseInt(isize, it_y.next().?, 10);
 
@@ -166,8 +160,6 @@ fn part2(target: Area) usize {
 
 test "probe shooting" {
     const input = "target area: x=20..30, y=-10..-5";
-
-    const allocator = std.testing.allocator;
 
     const target_area = try parse(input);
 

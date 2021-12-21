@@ -8,12 +8,12 @@ const data = @embedFile("../inputs/day04.txt");
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa_impl.deinit();
-    const gpa = &gpa_impl.allocator;
+    const gpa = gpa_impl.allocator();
 
     return main_with_allocator(gpa);
 }
 
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+pub fn main_with_allocator(allocator: Allocator) anyerror!void {
     const bingo = try Bingo.parse(allocator, data[0..]);
     defer bingo.deinit();
 
@@ -25,14 +25,14 @@ pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
 
 const Solve = struct { part1: usize, part2: usize };
 
-fn solve(allocator: *Allocator, bingo: Bingo) !Solve {
+fn solve(allocator: Allocator, bingo: Bingo) !Solve {
     var winner_score: ?usize = null;
     var winning_number: ?usize = null;
 
     var last_winner_score: ?usize = null;
     var last_winning_number: ?usize = null;
 
-    var has_won = try std.bit_set.DynamicBitSet.initEmpty(bingo.boards.len, allocator);
+    var has_won = try std.bit_set.DynamicBitSet.initEmpty(allocator, bingo.boards.len);
     defer has_won.deinit();
 
     for (bingo.numbers) |n| {
@@ -66,13 +66,13 @@ const Board = struct {
     seen_rows: [5]BitSet(5),
     seen_cols: [5]BitSet(5),
 
-    fn parse(lines: *std.mem.TokenIterator) !Self {
+    fn parse(lines: *std.mem.TokenIterator(u8)) !Self {
         var grid: [5][5]u8 = undefined;
         var initBitSet: [5]BitSet(5) = undefined;
 
         var row: usize = 0;
         while (row < 5) : (row += 1) {
-            var numbers = std.mem.tokenize(lines.next().?, " ");
+            var numbers = std.mem.tokenize(u8, lines.next().?, " ");
             initBitSet[row] = BitSet(5).initEmpty();
 
             var col: usize = 0;
@@ -129,7 +129,7 @@ const Board = struct {
 const Bingo = struct {
     const Self = @This();
 
-    allocator: *Allocator,
+    allocator: Allocator,
     numbers: []u8,
     boards: []Board,
 
@@ -138,14 +138,14 @@ const Bingo = struct {
         self.allocator.free(self.boards);
     }
 
-    fn parse(allocator: *Allocator, input: []const u8) !Self {
+    fn parse(allocator: Allocator, input: []const u8) !Self {
         var buffer = std.ArrayList(u8).init(allocator);
         defer buffer.deinit();
 
-        var lines = std.mem.tokenize(input, "\n");
+        var lines = std.mem.tokenize(u8, input, "\n");
 
         const numbers_line = lines.next().?;
-        var numbers_str = std.mem.tokenize(numbers_line, ",");
+        var numbers_str = std.mem.tokenize(u8, numbers_line, ",");
         var numbers = std.ArrayList(u8).init(allocator);
 
         while (numbers_str.next()) |n_str| {

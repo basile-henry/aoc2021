@@ -13,7 +13,7 @@ pub fn main() anyerror!void {
     var prev_window_index: usize = 0;
     var increased_window: usize = 0;
 
-    var lines = std.mem.tokenize(data, "\n");
+    var lines = std.mem.tokenize(u8, data, "\n");
     while (lines.next()) |line| {
         const depth = try std.fmt.parseInt(usize, line, 10);
 
@@ -44,12 +44,6 @@ pub fn main() anyerror!void {
 
     print("Part 1: {}\n", .{increased});
     print("Part 2: {}\n", .{increased_window});
-}
-
-pub fn main_with_allocator(allocator: *std.mem.Allocator) anyerror!void {
-    _ = allocator;
-
-    return main();
 }
 
 fn sum(xs: []usize) usize {

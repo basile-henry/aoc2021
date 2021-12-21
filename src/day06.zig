@@ -10,7 +10,7 @@ pub fn main() anyerror!void {
     std.mem.set(u64, lanternfish[0..], 0);
 
     {
-        var it = std.mem.split(std.mem.trimRight(u8, data[0..], "\n"), ",");
+        var it = std.mem.split(u8, std.mem.trimRight(u8, data[0..], "\n"), ",");
         while (it.next()) |n| {
             const x = try std.fmt.parseInt(u8, n, 10);
             lanternfish[x] += 1;
@@ -38,12 +38,6 @@ pub fn main() anyerror!void {
     }
 
     print("Part 2: {d}\n", .{sum(u64, lanternfish)});
-}
-
-pub fn main_with_allocator(allocator: *std.mem.Allocator) anyerror!void {
-    _ = allocator;
-
-    return main();
 }
 
 fn sum(comptime T: type, a: anytype) T {

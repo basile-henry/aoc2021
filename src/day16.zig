@@ -7,12 +7,12 @@ const data = @embedFile("../inputs/day16.txt");
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa_impl.deinit();
-    const gpa = &gpa_impl.allocator;
+    const gpa = gpa_impl.allocator();
 
     return main_with_allocator(gpa);
 }
 
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+pub fn main_with_allocator(allocator: Allocator) anyerror!void {
     const packet = try Packet.parse_str(allocator, std.mem.trimRight(u8, data, "\n"));
     defer packet.deinit();
 
@@ -47,7 +47,7 @@ const PacketType = enum(u3) {
 const Packet = struct {
     const Self = @This();
 
-    allocator: *Allocator,
+    allocator: Allocator,
     version: u3,
     id: PacketType,
     payload: Payload,
@@ -65,7 +65,7 @@ const Packet = struct {
         }
     }
 
-    fn parse_str(allocator: *Allocator, hex_input: []const u8) !Self {
+    fn parse_str(allocator: Allocator, hex_input: []const u8) !Self {
         var input = try dehex(allocator, hex_input);
         defer allocator.free(input);
 
@@ -75,7 +75,7 @@ const Packet = struct {
         return try Self.parse(allocator, &bit_reader);
     }
 
-    fn parse(allocator: *Allocator, bit_reader: *BitReader) anyerror!Self {
+    fn parse(allocator: Allocator, bit_reader: *BitReader) anyerror!Self {
         const version = try bit_reader.readBitsNoEof(u3, 3);
         const id = @intToEnum(PacketType, try bit_reader.readBitsNoEof(u3, 3));
 
@@ -202,7 +202,7 @@ const Packet = struct {
     }
 };
 
-fn dehex(allocator: *Allocator, hex_input: []const u8) ![]u8 {
+fn dehex(allocator: Allocator, hex_input: []const u8) ![]u8 {
     var input = try std.ArrayList(u8).initCapacity(allocator, (hex_input.len + 1) / 2);
     errdefer input.deinit();
 

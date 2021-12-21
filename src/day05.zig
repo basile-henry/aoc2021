@@ -7,16 +7,16 @@ const data = @embedFile("../inputs/day05.txt");
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa_impl.deinit();
-    const gpa = &gpa_impl.allocator;
+    const gpa = gpa_impl.allocator();
 
     return main_with_allocator(gpa);
 }
 
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+pub fn main_with_allocator(allocator: Allocator) anyerror!void {
     const lines = try parse(allocator, data[0..]);
     defer lines.deinit();
 
-    const res = try solve(allocator, lines.items);
+    const res = try solve(lines.items);
 
     print("Part 1: {d}\n", .{res.part1});
     print("Part 2: {d}\n", .{res.part2});
@@ -29,7 +29,7 @@ const Point = struct {
     y: i16,
 
     fn parse(input: []const u8) !Self {
-        var pos = std.mem.split(input, ",");
+        var pos = std.mem.split(u8, input, ",");
 
         const x = try std.fmt.parseInt(i16, pos.next().?, 10);
         const y = try std.fmt.parseInt(i16, pos.next().?, 10);
@@ -114,7 +114,7 @@ const Line = struct {
     end: Point,
 
     fn parse(input: []const u8) !Self {
-        var point_str = std.mem.split(input, " -> ");
+        var point_str = std.mem.split(u8, input, " -> ");
         const start = try Point.parse(point_str.next().?);
         const end = try Point.parse(point_str.next().?);
 
@@ -138,8 +138,8 @@ const Line = struct {
     }
 };
 
-fn parse(allocator: *Allocator, input: []const u8) !std.ArrayList(Line) {
-    var lines = std.mem.tokenize(input, "\n");
+fn parse(allocator: Allocator, input: []const u8) !std.ArrayList(Line) {
+    var lines = std.mem.tokenize(u8, input, "\n");
     var out = std.ArrayList(Line).init(allocator);
     errdefer out.deinit();
 
@@ -163,7 +163,7 @@ const Cell = struct {
 
 var points: [1000][1000]Cell = undefined; // zero initialisation
 
-fn solve(allocator: *Allocator, lines: []const Line) !Result {
+fn solve(lines: []const Line) !Result {
     var overlaps: usize = 0;
     var overlaps_with_diagonal: usize = 0;
 
@@ -220,7 +220,7 @@ test "overlap" {
     const lines = try parse(allocator, input[0..]);
     defer lines.deinit();
 
-    const res = try solve(allocator, lines.items);
+    const res = try solve(lines.items);
 
     try std.testing.expectEqual(@as(usize, 5), res.part1);
     try std.testing.expectEqual(@as(usize, 12), res.part2);

@@ -7,12 +7,12 @@ const data = @embedFile("../inputs/day08.txt");
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa_impl.deinit();
-    const gpa = &gpa_impl.allocator;
+    const gpa = gpa_impl.allocator();
 
     return main_with_allocator(gpa);
 }
 
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+pub fn main_with_allocator(allocator: Allocator) anyerror!void {
     const segments = try parse(allocator, data[0..]);
     defer segments.deinit();
 
@@ -25,22 +25,22 @@ const Segment = struct {
     output: [4][]const u8,
 };
 
-fn parse(allocator: *Allocator, input: []const u8) !std.ArrayList(Segment) {
+fn parse(allocator: Allocator, input: []const u8) !std.ArrayList(Segment) {
     var out = std.ArrayList(Segment).init(allocator);
 
-    var lines = std.mem.tokenize(input, "\n");
+    var lines = std.mem.tokenize(u8, input, "\n");
 
     while (lines.next()) |line| {
         var segment: Segment = undefined;
-        var parts = std.mem.split(line, " | ");
+        var parts = std.mem.split(u8, line, " | ");
 
-        var unique_signals = std.mem.tokenize(parts.next().?, " ");
+        var unique_signals = std.mem.tokenize(u8, parts.next().?, " ");
 
         for (segment.unique_signals) |*signal| {
             signal.* = unique_signals.next().?;
         }
 
-        var output = std.mem.tokenize(parts.next().?, " ");
+        var output = std.mem.tokenize(u8, parts.next().?, " ");
 
         for (segment.output) |*o| {
             o.* = output.next().?;
@@ -86,7 +86,7 @@ fn idx(c: u8) usize {
     return @as(usize, c - 'a');
 }
 
-fn digit(comptime n: usize) comptime BitSet {
+fn digit(comptime n: usize) BitSet {
     comptime var out = BitSet.initEmpty();
 
     comptime {

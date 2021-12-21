@@ -13,9 +13,9 @@ pub fn main() anyerror!void {
     var depth2: usize = 0;
     var aim: usize = 0;
 
-    var lines = std.mem.tokenize(data, "\n");
+    var lines = std.mem.tokenize(u8, data, "\n");
     while (lines.next()) |line| {
-        var word = std.mem.tokenize(line, " ");
+        var word = std.mem.tokenize(u8, line, " ");
         const command = word.next().?;
         const amount = try std.fmt.parseInt(usize, word.rest(), 10);
 
@@ -36,10 +36,4 @@ pub fn main() anyerror!void {
 
     print("Part 1: {}\n", .{depth * position});
     print("Part 2: {}\n", .{depth2 * position2});
-}
-
-pub fn main_with_allocator(allocator: *std.mem.Allocator) anyerror!void {
-    _ = allocator;
-
-    return main();
 }

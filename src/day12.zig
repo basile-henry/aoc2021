@@ -7,12 +7,12 @@ const data = @embedFile("../inputs/day12.txt");
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa_impl.deinit();
-    const gpa = &gpa_impl.allocator;
+    const gpa = gpa_impl.allocator();
 
     return main_with_allocator(gpa);
 }
 
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+pub fn main_with_allocator(allocator: Allocator) anyerror!void {
     var map = try parse(allocator, data[0..]);
     defer deinit_map(&map);
 
@@ -31,12 +31,12 @@ fn deinit_map(map: *Map) void {
     map.deinit();
 }
 
-fn parse(allocator: *Allocator, input: []const u8) !Map {
-    var lines = std.mem.tokenize(input, "\n");
+fn parse(allocator: Allocator, input: []const u8) !Map {
+    var lines = std.mem.tokenize(u8, input, "\n");
     var out = Map.init(allocator);
 
     while (lines.next()) |line| {
-        var points = std.mem.tokenize(line, "-");
+        var points = std.mem.tokenize(u8, line, "-");
         const a = points.next().?;
         const b = points.next().?;
 
@@ -63,7 +63,7 @@ const Frame = struct {
     max_small_cave: usize,
 };
 
-fn count_paths(allocator: *Allocator, map: Map, max_small_cave: usize) !usize {
+fn count_paths(allocator: Allocator, map: Map, max_small_cave: usize) !usize {
     var frames = std.ArrayList(Frame).init(allocator);
     defer frames.deinit();
 
@@ -128,11 +128,11 @@ fn count(item: []const u8, frames: []Frame) usize {
     return out;
 }
 
-fn part1(allocator: *Allocator, map: Map) !usize {
+fn part1(allocator: Allocator, map: Map) !usize {
     return count_paths(allocator, map, 1);
 }
 
-fn part2(allocator: *Allocator, map: Map) !usize {
+fn part2(allocator: Allocator, map: Map) !usize {
     return count_paths(allocator, map, 2);
 }
 

@@ -7,12 +7,12 @@ const data = @embedFile("../inputs/day15.txt");
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa_impl.deinit();
-    const gpa = &gpa_impl.allocator;
+    const gpa = gpa_impl.allocator();
 
     return main_with_allocator(gpa);
 }
 
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+pub fn main_with_allocator(allocator: Allocator) anyerror!void {
     const grid = try parse(allocator, data);
     defer deinit_grid(u64, grid);
 
@@ -32,10 +32,10 @@ fn deinit_grid(comptime T: type, grid: Grid(T)) void {
     grid.deinit();
 }
 
-fn parse(allocator: *Allocator, input: []const u8) !Grid(u64) {
+fn parse(allocator: Allocator, input: []const u8) !Grid(u64) {
     var grid = Grid(u64).init(allocator);
 
-    var lines = std.mem.tokenize(input, "\n");
+    var lines = std.mem.tokenize(u8, input, "\n");
     while (lines.next()) |line| {
         var row = try std.ArrayList(u64).initCapacity(allocator, line.len);
 
@@ -49,31 +49,34 @@ fn parse(allocator: *Allocator, input: []const u8) !Grid(u64) {
     return grid;
 }
 
-fn part1(allocator: *Allocator, grid: Grid(u64)) !u64 {
+fn part1(allocator: Allocator, grid: Grid(u64)) !u64 {
     return solve(1, allocator, grid);
 }
 
-fn part2(allocator: *Allocator, grid: Grid(u64)) !u64 {
+fn part2(allocator: Allocator, grid: Grid(u64)) !u64 {
     return solve(5, allocator, grid);
 }
+
+const Context = struct {
+    width: usize,
+    distances: *[]u64,
+};
 
 const Point = struct {
     const Self = @This();
 
     x: usize,
     y: usize,
-    width: usize,
-    distances: *[]u64,
 
-    fn distance(self: Self) u64 {
-        return self.distances.*[self.y * self.width + self.x];
+    fn distance(self: Self, context: Context) u64 {
+        return context.distances.*[self.y * context.width + self.x];
     }
 
-    fn update_distance(self: *Self, dist: u64) bool {
-        const current = self.distances.*[self.y * self.width + self.x];
+    fn update_distance(self: *Self, context: Context, dist: u64) bool {
+        const current = context.distances.*[self.y * context.width + self.x];
 
         if (dist < current) {
-            self.distances.*[self.y * self.width + self.x] = dist;
+            context.distances.*[self.y * context.width + self.x] = dist;
             return true;
         }
 
@@ -81,11 +84,11 @@ const Point = struct {
     }
 };
 
-fn shorter_distance(a: Point, b: Point) std.math.Order {
-    return std.math.order(a.distance(), b.distance());
+fn shorter_distance(context: Context, a: Point, b: Point) std.math.Order {
+    return std.math.order(a.distance(context), b.distance(context));
 }
 
-fn solve(comptime repeat: usize, allocator: *Allocator, grid: Grid(u64)) !u64 {
+fn solve(comptime repeat: usize, allocator: Allocator, grid: Grid(u64)) !u64 {
     const yl = grid.items.len;
     const xl = grid.items[0].items.len;
 
@@ -98,18 +101,17 @@ fn solve(comptime repeat: usize, allocator: *Allocator, grid: Grid(u64)) !u64 {
     std.mem.set(u64, distances, std.math.maxInt(u64));
     distances[0] = 0;
 
-    var to_visit = std.PriorityQueue(Point).init(allocator, shorter_distance);
+    const context = Context{ .width = width, .distances = &distances };
+    var to_visit = std.PriorityQueue(Point, Context, shorter_distance).init(allocator, context);
     defer to_visit.deinit();
 
     try to_visit.add(Point{
         .x = 0,
         .y = 0,
-        .width = width,
-        .distances = &distances,
     });
 
     while (to_visit.removeOrNull()) |current| {
-        if (current.y == height - 1 and current.x == width - 1) return current.distance();
+        if (current.y == height - 1 and current.x == width - 1) return current.distance(context);
 
         const neighbours = [4][2]isize{
             [2]isize{ -1, 0 }, // left
@@ -130,14 +132,12 @@ fn solve(comptime repeat: usize, allocator: *Allocator, grid: Grid(u64)) !u64 {
             var neighbour_point = Point{
                 .x = unx,
                 .y = uny,
-                .width = width,
-                .distances = &distances,
             };
 
             var cost: u64 = grid.items[uny % yl].items[unx % xl] + (unx / xl) + (uny / yl);
             if (cost > 9) cost -= 9;
 
-            if (neighbour_point.update_distance(current.distance() + cost)) {
+            if (neighbour_point.update_distance(context, current.distance(context) + cost)) {
                 try to_visit.add(neighbour_point);
             }
         }

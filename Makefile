@@ -12,5 +12,8 @@ build:
 run:
 	zig run -O ReleaseSafe src/day$(day).zig
 
+test:
+	zig test src/day$(day).zig
+
 main:
 	zig build-exe -O ReleaseSafe src/main.zig

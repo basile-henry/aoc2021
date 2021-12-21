@@ -7,18 +7,18 @@ const data = @embedFile("../inputs/day10.txt");
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa_impl.deinit();
-    const gpa = &gpa_impl.allocator;
+    const gpa = gpa_impl.allocator();
 
     return main_with_allocator(gpa);
 }
 
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+pub fn main_with_allocator(allocator: Allocator) anyerror!void {
     print("Part 1: {d}\n", .{try part1(allocator, data[0..])});
     print("Part 2: {d}\n", .{try part2(allocator, data[0..])});
 }
 
-fn part1(allocator: *Allocator, input: []const u8) !usize {
-    var lines = std.mem.tokenize(input, "\n");
+fn part1(allocator: Allocator, input: []const u8) !usize {
+    var lines = std.mem.tokenize(u8, input, "\n");
 
     var stack = std.ArrayList(u8).init(allocator);
     defer stack.deinit();
@@ -44,8 +44,8 @@ fn part1(allocator: *Allocator, input: []const u8) !usize {
     return score;
 }
 
-fn part2(allocator: *Allocator, input: []const u8) !usize {
-    var lines = std.mem.tokenize(input, "\n");
+fn part2(allocator: Allocator, input: []const u8) !usize {
+    var lines = std.mem.tokenize(u8, input, "\n");
 
     var stack = std.ArrayList(u8).init(allocator);
     defer stack.deinit();

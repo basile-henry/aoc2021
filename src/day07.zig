@@ -7,28 +7,28 @@ const data = @embedFile("../inputs/day07.txt");
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa_impl.deinit();
-    const gpa = &gpa_impl.allocator;
+    const gpa = gpa_impl.allocator();
 
     return main_with_allocator(gpa);
 }
 
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+pub fn main_with_allocator(allocator: Allocator) anyerror!void {
     var positions = std.ArrayList(isize).init(allocator);
     defer positions.deinit();
 
     {
-        var it = std.mem.split(std.mem.trimRight(u8, data[0..], "\n"), ",");
+        var it = std.mem.split(u8, std.mem.trimRight(u8, data[0..], "\n"), ",");
         while (it.next()) |n| {
             const x = try std.fmt.parseInt(isize, n, 10);
             try positions.append(x);
         }
     }
 
-    print("Part 1: {d}\n", .{try solve(allocator, positions.items, cost1)});
-    print("Part 2: {d}\n", .{try solve(allocator, positions.items, cost2)});
+    print("Part 1: {d}\n", .{try solve(positions.items, cost1)});
+    print("Part 2: {d}\n", .{try solve(positions.items, cost2)});
 }
 
-fn solve(allocator: *Allocator, positions: []const isize, cost: fn ([]const isize, isize) anyerror!isize) anyerror!isize {
+fn solve(positions: []const isize, cost: fn ([]const isize, isize) anyerror!isize) anyerror!isize {
     var offset = averageInt(positions);
     const cur_cost = try cost(positions, offset);
     const next_cost = try cost(positions, offset + 1);
@@ -108,11 +108,9 @@ fn averageInt(xs: []const isize) isize {
 test "crabs" {
     const positions = [_]isize{ 16, 1, 2, 0, 4, 2, 7, 1, 2, 14 };
 
-    const allocator = std.testing.allocator;
-
-    const part1 = try solve(allocator, positions[0..], cost1);
+    const part1 = try solve(positions[0..], cost1);
     try std.testing.expectEqual(@as(isize, 37), part1);
 
-    const part2 = try solve(allocator, positions[0..], cost2);
+    const part2 = try solve(positions[0..], cost2);
     try std.testing.expectEqual(@as(isize, 168), part2);
 }

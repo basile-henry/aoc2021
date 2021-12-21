@@ -7,12 +7,12 @@ const data = @embedFile("../inputs/day18.txt");
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa_impl.deinit();
-    const gpa = &gpa_impl.allocator;
+    const gpa = gpa_impl.allocator();
 
     return main_with_allocator(gpa);
 }
 
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+pub fn main_with_allocator(allocator: Allocator) anyerror!void {
     const nums = try parse(allocator, data);
     defer {
         for (nums.items) |n| {
@@ -26,7 +26,7 @@ pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
     print("Part 2: {d}\n", .{try part2(allocator, nums.items)});
 }
 
-fn parse(allocator: *Allocator, input: []const u8) !std.ArrayList(SnailFish) {
+fn parse(allocator: Allocator, input: []const u8) !std.ArrayList(SnailFish) {
     var out = std.ArrayList(SnailFish).init(allocator);
     errdefer {
         for (out.items) |n| {
@@ -36,7 +36,7 @@ fn parse(allocator: *Allocator, input: []const u8) !std.ArrayList(SnailFish) {
         out.deinit();
     }
 
-    var lines = std.mem.tokenize(input, "\n");
+    var lines = std.mem.tokenize(u8, input, "\n");
 
     while (lines.next()) |line| {
         try out.append(try SnailFish.parse(allocator, line));
@@ -56,7 +56,7 @@ const Node = union(enum) {
     single: u8,
     pair: Pair,
 
-    fn parse(allocator: *Allocator, input: []const u8) !Self {
+    fn parse(allocator: Allocator, input: []const u8) !Self {
         if (input[0] == '[') return Self{ .pair = try Pair.parse(allocator, input) };
 
         return Self{ .single = try std.fmt.parseInt(u8, input, 10) };
@@ -69,7 +69,7 @@ const Node = union(enum) {
         }
     }
 
-    fn clone(self: Self, allocator: *Allocator) !Self {
+    fn clone(self: Self, allocator: Allocator) !Self {
         switch (self) {
             .single => |s| return Self{ .single = s },
             .pair => |p| return Self{ .pair = try p.clone(allocator) },
@@ -111,7 +111,7 @@ const Node = union(enum) {
         }
     }
 
-    fn split(self: *Self, allocator: *Allocator) !bool {
+    fn split(self: *Self, allocator: Allocator) !bool {
         switch (self.*) {
             .single => |s| {
                 if (s >= 10) {
@@ -146,12 +146,12 @@ const Pair = struct {
     left: *Node,
     right: *Node,
 
-    fn deinit(self: Self, allocator: *Allocator) void {
+    fn deinit(self: Self, allocator: Allocator) void {
         allocator.destroy(self.left);
         allocator.destroy(self.right);
     }
 
-    fn init_undefined(allocator: *Allocator) !Self {
+    fn init_undefined(allocator: Allocator) !Self {
         var left = try allocator.create(Node);
         errdefer allocator.destroy(left);
 
@@ -164,7 +164,7 @@ const Pair = struct {
         };
     }
 
-    fn parse(allocator: *Allocator, input: []const u8) anyerror!Self {
+    fn parse(allocator: Allocator, input: []const u8) anyerror!Self {
         if (input[0] != '[' or input[input.len - 1] != ']') return error.InvalidPair;
 
         const inner = input[1 .. input.len - 1];
@@ -202,7 +202,7 @@ const Pair = struct {
         return 3 * self.left.magnitude() + 2 * self.right.magnitude();
     }
 
-    fn clone(self: Self, allocator: *Allocator) anyerror!Self {
+    fn clone(self: Self, allocator: Allocator) anyerror!Self {
         var new = try Self.init_undefined(allocator);
         errdefer new.deinit(allocator);
 
@@ -235,7 +235,7 @@ const Pair = struct {
         return ret;
     }
 
-    fn split(self: *Self, allocator: *Allocator) anyerror!bool {
+    fn split(self: *Self, allocator: Allocator) anyerror!bool {
         if (try self.left.split(allocator)) return true;
         return try self.right.split(allocator);
     }
@@ -259,11 +259,11 @@ const SnailFish = struct {
         self.arena.deinit();
     }
 
-    fn parse(allocator: *Allocator, input: []const u8) !Self {
+    fn parse(allocator: Allocator, input: []const u8) !Self {
         var arena = std.heap.ArenaAllocator.init(allocator);
         errdefer arena.deinit();
 
-        const root = try Pair.parse(&arena.allocator, input);
+        const root = try Pair.parse(arena.allocator(), input);
 
         return Self{
             .arena = arena,
@@ -278,16 +278,16 @@ const SnailFish = struct {
     fn reduce(self: *Self) !void {
         _ = self.root.explode(1);
 
-        while (try self.root.split(&self.arena.allocator)) {
+        while (try self.root.split(self.arena.allocator())) {
             _ = self.root.explode(1);
         }
     }
 
-    fn clone_into(self: Self, allocator: *Allocator) !Self {
+    fn clone_into(self: Self, allocator: Allocator) !Self {
         var arena = std.heap.ArenaAllocator.init(allocator);
         errdefer arena.deinit();
 
-        const root = try self.root.clone(&arena.allocator);
+        const root = try self.root.clone(arena.allocator());
 
         return Self{
             .arena = arena,
@@ -296,7 +296,7 @@ const SnailFish = struct {
     }
 
     fn add(self: *Self, other: Self) !void {
-        const allocator = &self.arena.allocator;
+        const allocator = self.arena.allocator();
 
         var new_root = try Pair.init_undefined(allocator);
         errdefer new_root.deinit(allocator);
@@ -315,7 +315,7 @@ const SnailFish = struct {
     }
 };
 
-fn part1(allocator: *Allocator, nums: []SnailFish) !usize {
+fn part1(allocator: Allocator, nums: []SnailFish) !usize {
     var sum = try nums[0].clone_into(allocator);
     defer sum.deinit();
 
@@ -326,7 +326,7 @@ fn part1(allocator: *Allocator, nums: []SnailFish) !usize {
     return sum.magnitude();
 }
 
-fn part2(allocator: *Allocator, nums: []SnailFish) !usize {
+fn part2(allocator: Allocator, nums: []SnailFish) !usize {
     var max: usize = 0;
 
     for (nums[0..]) |x, i| {

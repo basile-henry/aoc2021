@@ -7,12 +7,12 @@ const data = @embedFile("../inputs/day13.txt");
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa_impl.deinit();
-    const gpa = &gpa_impl.allocator;
+    const gpa = gpa_impl.allocator();
 
     return main_with_allocator(gpa);
 }
 
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+pub fn main_with_allocator(allocator: Allocator) anyerror!void {
     var instr = try Instr.parse(allocator, data[0..]);
     defer instr.deinit();
 
@@ -28,7 +28,7 @@ const Point = struct {
     y: isize,
 
     fn parse(input: []const u8) !Self {
-        var it = std.mem.tokenize(input, ",");
+        var it = std.mem.tokenize(u8, input, ",");
 
         const x = try std.fmt.parseInt(isize, it.next().?, 10);
         const y = try std.fmt.parseInt(isize, it.next().?, 10);
@@ -77,8 +77,8 @@ const Instr = struct {
         self.* = undefined;
     }
 
-    fn parse(allocator: *Allocator, input: []const u8) !Self {
-        var lines = std.mem.split(input, "\n");
+    fn parse(allocator: Allocator, input: []const u8) !Self {
+        var lines = std.mem.split(u8, input, "\n");
 
         var points = std.AutoHashMap(Point, void).init(allocator);
         var folds = std.ArrayList(Fold).init(allocator);
@@ -107,7 +107,7 @@ const Instr = struct {
     }
 };
 
-fn part1(allocator: *Allocator, instr: Instr) !usize {
+fn part1(allocator: Allocator, instr: Instr) !usize {
     var points = std.AutoHashMap(Point, void).init(allocator);
     defer points.deinit();
 
@@ -142,7 +142,7 @@ fn part1(allocator: *Allocator, instr: Instr) !usize {
     return points.count();
 }
 
-fn part2(allocator: *Allocator, instr: Instr) !void {
+fn part2(allocator: Allocator, instr: Instr) !void {
     var points = try instr.points.clone();
     defer points.deinit();
 

@@ -9,12 +9,12 @@ const BIT_COUNT = 12;
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa_impl.deinit();
-    const gpa = &gpa_impl.allocator;
+    const gpa = gpa_impl.allocator();
 
     return main_with_allocator(gpa);
 }
 
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+pub fn main_with_allocator(allocator: Allocator) anyerror!void {
     // Part 1
     var line_count: usize = 0;
     var ones_count: [BIT_COUNT]usize = undefined;
@@ -25,7 +25,7 @@ pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
     defer inputs.deinit();
 
     {
-        var lines = std.mem.tokenize(data, "\n");
+        var lines = std.mem.tokenize(u8, data, "\n");
         while (lines.next()) |line| {
             var input: usize = 0;
             for (line) |c, i| {

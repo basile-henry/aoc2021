@@ -7,12 +7,12 @@ const data = @embedFile("../inputs/day09.txt");
 pub fn main() anyerror!void {
     var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa_impl.deinit();
-    const gpa = &gpa_impl.allocator;
+    const gpa = gpa_impl.allocator();
 
     return main_with_allocator(gpa);
 }
 
-pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
+pub fn main_with_allocator(allocator: Allocator) anyerror!void {
     const basin = try parse(allocator, data[0..]);
     defer {
         for (basin.items) |row| {
@@ -27,9 +27,9 @@ pub fn main_with_allocator(allocator: *Allocator) anyerror!void {
 
 const Basin = std.ArrayList(std.ArrayList(u4));
 
-fn parse(allocator: *Allocator, input: []const u8) !Basin {
+fn parse(allocator: Allocator, input: []const u8) !Basin {
     var basin = try Basin.initCapacity(allocator, 100);
-    var lines = std.mem.tokenize(input, "\n");
+    var lines = std.mem.tokenize(u8, input, "\n");
 
     while (lines.next()) |line| {
         if (line.len > 0) {
@@ -111,8 +111,8 @@ fn add_point(arena: *std.heap.ArenaAllocator, point: Point, basin: Basin, unique
     }
 
     if (!found_adjacent) {
-        const ptr = try arena.allocator.create(PointSet);
-        ptr.* = PointSet.init(&arena.allocator);
+        const ptr = try arena.allocator().create(PointSet);
+        ptr.* = PointSet.init(arena.allocator());
         try ptr.*.put(point, .{});
         try basins_map.put(point, ptr);
         try unique_basins.append(ptr);
@@ -123,7 +123,7 @@ fn add_point(arena: *std.heap.ArenaAllocator, point: Point, basin: Basin, unique
     }
 }
 
-fn part2(allocator: *Allocator, basin: Basin) !usize {
+fn part2(allocator: Allocator, basin: Basin) !usize {
     var arena = std.heap.ArenaAllocator.init(allocator);
     defer arena.deinit();
 
@@ -133,7 +133,7 @@ fn part2(allocator: *Allocator, basin: Basin) !usize {
     var basins_map = std.AutoHashMap(Point, *PointSet).init(allocator);
     defer basins_map.deinit();
 
-    try basins_map.ensureCapacity(100 * 100);
+    try basins_map.ensureTotalCapacity(100 * 100);
 
     for (basin.items) |row, y| {
         for (row.items) |_, x| {
