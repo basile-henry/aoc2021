@@ -1,7 +1,7 @@
 const std = @import("std");
 const print = std.debug.print;
 
-var alloc_buffer: [8 * 1024 * 1024]u8 = undefined;
+var alloc_buffer: [64 * 1024 * 1024]u8 = undefined;
 
 pub fn main() anyerror!void {
     var fixed_alloc = std.heap.FixedBufferAllocator.init(alloc_buffer[0..]);
@@ -92,6 +92,10 @@ pub fn main() anyerror!void {
 
     print("\nDay 21\n", .{});
     try @import("./day21.zig").main_with_allocator(allocator);
+    try times.append(timer.lap());
+
+    print("\nDay 22\n", .{});
+    try @import("./day22.zig").main_with_allocator(allocator);
     try times.append(timer.lap());
 
     print("\nTimes:\n", .{});
